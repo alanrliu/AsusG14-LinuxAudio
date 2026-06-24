@@ -72,8 +72,6 @@ Provides a clean install and full rollback option
 <br>
 ## Tested on:
 
-✅ Kubuntu 25.10
-
 ✅ Ubuntu 25.10
 
 ✅ Debian
@@ -82,7 +80,7 @@ Provides a clean install and full rollback option
 
 ✅ CachyOS
 
-Other distributions may work but are not guaranteed.
+Other distributions (such as Fedora) may work but are not guaranteed. Derivatives should also work but are not guaranteed.
 <br>
 
 ✨ Features
