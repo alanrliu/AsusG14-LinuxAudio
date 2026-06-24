@@ -1,4 +1,4 @@
-## 🔊 Asus ROG Zephyrus G14/G16 (2024/2025) – Linux Sound Fix
+## 🔊 Asus ROG Zephyrus G14/G16 (2024/2025) – Linux Sound (Speakers and Headphones) Fix
 
 This repository contains a Linux sound normalization script for the Asus ROG Zephyrus G14/16 (2024/20025 edition), as well as a fix for the headphone jack. Most of the README came from the parent branch, and this branch exists to combine the fixes I have gathered.
 
