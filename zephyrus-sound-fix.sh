@@ -21,7 +21,7 @@ WIREPLUMBER_FILE="$WIREPLUMBER_DIR/99-alsasoftvol.conf"
 
 LOG_FILE="/var/log/zephyrus-sound-fix.log"
 
-SUPPORTED_DISTROS=("ubuntu" "kubuntu" "arch" "cachyos" "debian")
+SUPPORTED_DISTROS=("ubuntu" "kubuntu" "arch" "cachyos" "debian" "fedora")
 
 RED="\e[31m"; GREEN="\e[32m"; YELLOW="\e[33m"; BLUE="\e[34m"; RESET="\e[0m"
 
@@ -30,23 +30,24 @@ sudo -v || { echo "Sudo required"; exit 1; }
 log() { echo "$(date '+%F %T') | $*" | sudo tee -a "$LOG_FILE" >/dev/null 2>&1; }
 
 # -------- Distro detection --------
-detect_distro() {
-    if [[ -f /etc/os-release ]]; then
-        . /etc/os-release
-        ID="${ID,,}"  # lowercase
-        echo "$ID|$PRETTY_NAME"
-    else
-        echo "unknown|Unknown"
-    fi
-}
+# Sourced directly in the main shell (not a subshell) so ID_LIKE survives.
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    DISTRO="${ID,,}"
+    DISTRO_LIKE="${ID_LIKE,,}"
+    DISTRO_PRETTY="${PRETTY_NAME:-Unknown}"
+else
+    DISTRO="unknown"
+    DISTRO_LIKE=""
+    DISTRO_PRETTY="Unknown"
+fi
 
-DISTRO_RAW=$(detect_distro)
-DISTRO="${DISTRO_RAW%%|*}"
-DISTRO_PRETTY="${DISTRO_RAW##*|}"
-
-# Friendly text for menu
+# Friendly text for menu. ID_LIKE catches derivatives (Bazzite, Silverblue,
+# Manjaro, Mint, etc.) without having to list every spin by name.
 if [[ " ${SUPPORTED_DISTROS[*]} " =~ " $DISTRO " ]]; then
     DISTRO_FRIENDLY="$DISTRO_PRETTY (Supported)"
+elif [[ " $DISTRO_LIKE " =~ " arch " || " $DISTRO_LIKE " =~ " debian " || " $DISTRO_LIKE " =~ " fedora " ]]; then
+    DISTRO_FRIENDLY="$DISTRO_PRETTY (Untested derivative of a supported family)"
 else
     DISTRO_FRIENDLY="$DISTRO_PRETTY (Not supported – no warranty)"
 fi
@@ -288,6 +289,42 @@ fallback_mode() {
         esac
     done
 }
+
+# -------- Dependency check --------
+# This is the check that actually matters. Distro name was only ever a proxy
+# guess for whether these binaries exist; check for them directly instead.
+check_dependencies() {
+    local missing=()
+    for bin in amixer aplay pactl systemctl; do
+        command -v "$bin" >/dev/null 2>&1 || missing+=("$bin")
+    done
+
+    [[ ${#missing[@]} -eq 0 ]] && return 0
+
+    local hint
+    if [[ " $DISTRO_LIKE " =~ " arch " || "$DISTRO" == "arch" ]]; then
+        hint="sudo pacman -S alsa-utils pipewire-pulse"
+    elif [[ " $DISTRO_LIKE " =~ " debian " || "$DISTRO" == "debian" ]]; then
+        hint="sudo apt install alsa-utils pipewire-pulse"
+    elif [[ "$DISTRO" == "bazzite" || " $DISTRO_LIKE " =~ " fedora " ]]; then
+        hint="rpm-ostree install alsa-utils (then reboot), or run this script inside a Distrobox/toolbox that has it installed"
+    elif [[ "$DISTRO" == "nixos" ]]; then
+        hint="add alsa-utils to environment.systemPackages in configuration.nix, then nixos-rebuild switch"
+    else
+        hint="install the 'alsa-utils' package (provides amixer/aplay) and a PipeWire/PulseAudio utils package (provides pactl) for your distro"
+    fi
+
+    local msg="Missing required command(s): ${missing[*]}\n\nDetected distro: $DISTRO_PRETTY\n\nTo fix:\n  $hint"
+
+    if command -v whiptail >/dev/null; then
+        whiptail --title "Missing Dependencies" --msgbox "$msg" 16 78
+    else
+        echo -e "\n$msg\n"
+    fi
+    exit 1
+}
+
+check_dependencies
 
 # ================== START ==================
 if command -v whiptail >/dev/null; then
