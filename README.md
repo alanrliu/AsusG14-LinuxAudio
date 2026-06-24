@@ -3,9 +3,11 @@
 This repository contains a Linux sound normalization script for the Asus ROG Zephyrus G14/16 (2024/20025 edition), as well as a fix for the headphone jack. Most of the README came from the parent branch, and this branch exists to combine the fixes I have gathered.
 
 The script is designed for systems using PipeWire, WirePlumber, and ALSA, and fixes several common audio issues on this laptop — including a major one where system volume controls do not affect the subwoofers.
+
 <br>
-Thank you to emile86 and vtvz for individually contributing to these fixes!
+### Thank you to emile86 and vtvz for individually contributing to these fixes!
 <br>
+
 <br>
 ❗ Problems this script fixes
 <br>
